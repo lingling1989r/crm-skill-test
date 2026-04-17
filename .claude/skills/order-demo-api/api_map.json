@@ -1,0 +1,117 @@
+{
+  "auth.me": {
+    "method": "GET",
+    "path": "/auth/me",
+    "mode": "read"
+  },
+  "dashboard.overview": {
+    "method": "GET",
+    "path": "/dashboard/overview",
+    "mode": "read"
+  },
+  "customers.list": {
+    "method": "GET",
+    "path": "/customers",
+    "mode": "read"
+  },
+  "customers.create": {
+    "method": "POST",
+    "path": "/customers",
+    "mode": "write"
+  },
+  "customers.get": {
+    "method": "GET",
+    "path": "/customers/{customerId}",
+    "mode": "read"
+  },
+  "customers.update": {
+    "method": "PATCH",
+    "path": "/customers/{customerId}",
+    "mode": "write"
+  },
+  "customers.delete": {
+    "method": "DELETE",
+    "path": "/customers/{customerId}",
+    "mode": "write"
+  },
+  "orders.list": {
+    "method": "GET",
+    "path": "/orders",
+    "mode": "read"
+  },
+  "orders.create": {
+    "method": "POST",
+    "path": "/orders",
+    "mode": "write"
+  },
+  "orders.get": {
+    "method": "GET",
+    "path": "/orders/{orderId}",
+    "mode": "read"
+  },
+  "orders.update": {
+    "method": "PATCH",
+    "path": "/orders/{orderId}",
+    "mode": "write"
+  },
+  "orders.delete": {
+    "method": "DELETE",
+    "path": "/orders/{orderId}",
+    "mode": "write"
+  },
+  "products.list": {
+    "method": "GET",
+    "path": "/products",
+    "mode": "read"
+  },
+  "products.create": {
+    "method": "POST",
+    "path": "/products",
+    "mode": "write"
+  },
+  "products.get": {
+    "method": "GET",
+    "path": "/products/{productId}",
+    "mode": "read"
+  },
+  "products.update": {
+    "method": "PATCH",
+    "path": "/products/{productId}",
+    "mode": "write"
+  },
+  "products.delete": {
+    "method": "DELETE",
+    "path": "/products/{productId}",
+    "mode": "write"
+  },
+  "knowledge.search": {
+    "method": "POST",
+    "path": "/knowledge/search",
+    "mode": "read"
+  },
+  "knowledge.articles.list": {
+    "method": "GET",
+    "path": "/knowledge/articles",
+    "mode": "read"
+  },
+  "knowledge.articles.create": {
+    "method": "POST",
+    "path": "/knowledge/articles",
+    "mode": "write"
+  },
+  "knowledge.articles.get": {
+    "method": "GET",
+    "path": "/knowledge/articles/{articleId}",
+    "mode": "read"
+  },
+  "knowledge.articles.update": {
+    "method": "PATCH",
+    "path": "/knowledge/articles/{articleId}",
+    "mode": "write"
+  },
+  "knowledge.articles.delete": {
+    "method": "DELETE",
+    "path": "/knowledge/articles/{articleId}",
+    "mode": "write"
+  }
+}
