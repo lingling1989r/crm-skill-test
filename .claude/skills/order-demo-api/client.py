@@ -22,6 +22,7 @@ TOKEN_CANDIDATE_PATHS = [
     ("result", "access_token"),
     ("result", "token"),
 ]
+CONFIG_FILE_NAME = "config.json"
 
 
 class ApiError(Exception):
@@ -31,12 +32,28 @@ class ApiError(Exception):
         self.payload = payload
 
 
+def load_local_config():
+    path = Path(__file__).with_name(CONFIG_FILE_NAME)
+    if not path.exists():
+        return {}
+
+    try:
+        payload = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ApiError(f"Invalid JSON in {CONFIG_FILE_NAME}: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise ApiError(f"{CONFIG_FILE_NAME} must contain a JSON object")
+    return payload
+
+
 class CRMClient:
     def __init__(self):
-        self.base_url = os.environ.get("CRM_API_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
-        self.login_path = os.environ.get("CRM_API_LOGIN_PATH", DEFAULT_LOGIN_PATH)
-        self.timeout = float(os.environ.get("CRM_API_TIMEOUT", "20"))
-        self.token = os.environ.get("CRM_API_TOKEN")
+        self.config = load_local_config()
+        self.base_url = str(os.environ.get("CRM_API_BASE_URL") or self.config.get("base_url") or DEFAULT_BASE_URL).rstrip("/")
+        self.login_path = os.environ.get("CRM_API_LOGIN_PATH") or self.config.get("login_path") or DEFAULT_LOGIN_PATH
+        self.timeout = float(os.environ.get("CRM_API_TIMEOUT") or self.config.get("timeout") or "20")
+        self.token = os.environ.get("CRM_API_TOKEN") or self.config.get("token")
 
     def _url(self, path, params=None):
         full_path = path if path.startswith("/") else f"/{path}"
@@ -67,19 +84,29 @@ class CRMClient:
                 raise ApiError("CRM_API_LOGIN_PAYLOAD must decode to a JSON object")
             return payload
 
-        username = os.environ.get("CRM_API_USERNAME")
-        password = os.environ.get("CRM_API_PASSWORD")
+        config_payload = self.config.get("login_payload")
+        if config_payload is not None:
+            if not isinstance(config_payload, dict):
+                raise ApiError(f"{CONFIG_FILE_NAME} field 'login_payload' must be a JSON object")
+            return config_payload
+
+        username = os.environ.get("CRM_API_USERNAME") or self.config.get("username")
+        password = os.environ.get("CRM_API_PASSWORD") or self.config.get("password")
         if username and password:
             return {"username": username, "password": password}
 
         raise ApiError(
-            "Missing credentials. Set CRM_API_TOKEN, or set CRM_API_LOGIN_PAYLOAD, or set CRM_API_USERNAME and CRM_API_PASSWORD."
+            f"Missing credentials. Set CRM_API_TOKEN, or add token/username/password/login_payload in {CONFIG_FILE_NAME}, or set CRM_API_LOGIN_PAYLOAD / CRM_API_USERNAME / CRM_API_PASSWORD."
         )
 
     def can_login(self):
         if os.environ.get("CRM_API_LOGIN_PAYLOAD"):
             return True
-        return bool(os.environ.get("CRM_API_USERNAME") and os.environ.get("CRM_API_PASSWORD"))
+        if self.config.get("login_payload") is not None:
+            return True
+        username = os.environ.get("CRM_API_USERNAME") or self.config.get("username")
+        password = os.environ.get("CRM_API_PASSWORD") or self.config.get("password")
+        return bool(username and password)
 
     def _extract_token(self, payload):
         if isinstance(payload, str) and payload:
@@ -100,7 +127,7 @@ class CRMClient:
 
     def login(self, force=False):
         if self.token and not force:
-            return {"token_source": "env"}
+            return {"token_source": "config" if self.config.get("token") and not os.environ.get("CRM_API_TOKEN") else "env"}
 
         payload = self._login_payload()
         response = self.request("POST", self.login_path, body=payload, include_auth=False, retry_auth=False)
@@ -495,8 +522,8 @@ def summarize_error(error, status=None, details=None, path=None):
         detail_message = details
 
     if status == 401:
-        summary = "请求失败：接口需要 Bearer Token"
-        hint = "请配置 CRM_API_TOKEN；若你显式配置了登录信息，客户端才会自动重试登录"
+        summary = "请求失败：接口需要 Bearer Token 或有效登录配置"
+        hint = f"请设置 CRM_API_TOKEN，或在 {CONFIG_FILE_NAME} 中填写 token / username / password / login_payload；若显式配置了登录信息，客户端会自动重试登录"
     elif status == 404:
         summary = "请求失败：接口或资源不存在"
         hint = "请检查资源 ID 或请求路径是否正确"

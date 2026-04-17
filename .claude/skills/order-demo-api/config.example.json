@@ -1,0 +1,9 @@
+{
+  "base_url": "http://111.229.202.81:3021/api/v1",
+  "login_path": "/auth/login",
+  "timeout": 20,
+  "token": "",
+  "username": "",
+  "password": "",
+  "login_payload": null
+}

@@ -8,34 +8,67 @@
 - `client.py`：Python 客户端，负责登录、鉴权和请求发送
 - `api_map.json`：命名动作与接口路径映射
 
-## 环境变量
+## 配置文件
 
-如果接口启用了鉴权，推荐至少配置以下一种方式。没有登录态也可以先直接请求；若接口要求鉴权，再补 token。
+推荐使用本地配置文件，而不是把凭证写死在命令里。
+
+1. 复制示例文件：
+
+```bash
+cp .claude/skills/order-demo-api/config.example.json .claude/skills/order-demo-api/config.json
+```
+
+2. 在 `config.json` 中填写以下任一方式：
 
 ### 方式一：直接提供 token
 
-```bash
-export CRM_API_TOKEN='your-jwt-token'
+```json
+{
+  "token": "your-jwt-token"
+}
 ```
 
 ### 方式二：提供用户名密码
 
-```bash
-export CRM_API_USERNAME='your-username'
-export CRM_API_PASSWORD='your-password'
+```json
+{
+  "username": "your-username",
+  "password": "your-password"
+}
 ```
 
 ### 方式三：自定义登录 payload
 
-如果登录接口不是默认的 `username/password` 格式，可以直接提供 JSON：
-
-```bash
-export CRM_API_LOGIN_PAYLOAD='{"email":"demo@example.com","password":"secret"}'
+```json
+{
+  "login_payload": {
+    "email": "demo@example.com",
+    "password": "secret"
+  }
+}
 ```
 
-### 可选变量
+### 可选配置项
+
+```json
+{
+  "base_url": "http://111.229.202.81:3021/api/v1",
+  "login_path": "/auth/login",
+  "timeout": 20
+}
+```
+
+默认读取 `.claude/skills/order-demo-api/config.json`，并且环境变量仍可覆盖同名配置。
+
+## 环境变量
+
+如果你更习惯环境变量，也可以继续使用：
 
 ```bash
+export CRM_API_TOKEN='your-jwt-token'
+export CRM_API_USERNAME='your-username'
+export CRM_API_PASSWORD='your-password'
+export CRM_API_LOGIN_PAYLOAD='{"email":"demo@example.com","password":"secret"}'
 export CRM_API_BASE_URL='http://111.229.202.81:3021/api/v1'
 export CRM_API_LOGIN_PATH='/auth/login'
 export CRM_API_TIMEOUT='20'
@@ -104,7 +137,7 @@ python3 .claude/skills/order-demo-api/client.py 中文 客户 列表
 
 如果返回 401：
 - 先检查这个接口是否本来就要求鉴权
-- 若要求鉴权，补 `CRM_API_TOKEN`
+- 若要求鉴权，在 `config.json` 中补 `token`，或补 `username/password`
 - 只有你明确配置了用户名密码 / 登录 payload 时，客户端才会尝试自动重试一次
 
 如果返回 404：

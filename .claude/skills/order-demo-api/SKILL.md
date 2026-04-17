@@ -34,16 +34,28 @@ allowed-tools:
 
 ## Prerequisites
 
-优先从环境变量读取配置：
+优先从本地配置文件读取配置，其次再读取环境变量覆盖：
 
-- `CRM_API_BASE_URL`，默认 `http://111.229.202.81:3021/api/v1`
-- `CRM_API_TOKEN`，如果接口启用了鉴权就注入它
-- `CRM_API_USERNAME`
-- `CRM_API_PASSWORD`
-- `CRM_API_LOGIN_PAYLOAD`，可选，登录接口若不是 `{"username":"...","password":"..."}` 时用这个 JSON 字符串覆盖
-- `CRM_API_LOGIN_PATH`，默认 `/auth/login`
+- 本地配置文件：`.claude/skills/order-demo-api/config.json`
+- 示例文件：`.claude/skills/order-demo-api/config.example.json`
+- 环境变量仍可用，并且优先级高于配置文件
 
-本 skill 默认不做登录引导，也不要求先登录。没有 token 时直接请求；如果接口要求鉴权，服务端会返回 `401`，此时再提示补 `CRM_API_TOKEN` 即可。只有在明确配置了用户名密码或自定义登录 payload 时，客户端才会尝试自动重试一次。
+支持的配置项：
+
+- `base_url` / `CRM_API_BASE_URL`，默认 `http://111.229.202.81:3021/api/v1`
+- `token` / `CRM_API_TOKEN`
+- `username` / `CRM_API_USERNAME`
+- `password` / `CRM_API_PASSWORD`
+- `login_payload` / `CRM_API_LOGIN_PAYLOAD`
+- `login_path` / `CRM_API_LOGIN_PATH`，默认 `/auth/login`
+- `timeout` / `CRM_API_TIMEOUT`
+
+推荐流程：
+1. 复制 `config.example.json` 为 `config.json`
+2. 在 `config.json` 中填写 `token`，或填写 `username/password`
+3. 不要把 `config.json` 提交到仓库
+
+如果存在 token，客户端会直接附带 Bearer Token；如果没有 token，但配置了 `username/password` 或 `login_payload`，客户端会在遇到 401 时自动尝试登录一次。
 
 不要把 token 或密码写入仓库，也不要在回复里回显敏感信息。
 
