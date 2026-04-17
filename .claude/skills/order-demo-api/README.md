@@ -60,6 +60,18 @@ cp .claude/skills/order-demo-api/config.example.json .claude/skills/order-demo-a
 
 默认读取 `.claude/skills/order-demo-api/config.json`，并且环境变量仍可覆盖同名配置。
 
+### 配置校验规则
+
+客户端启动时会先校验 `config.json`：
+
+- 仅支持这些字段：`base_url`、`login_path`、`timeout`、`token`、`username`、`password`、`login_payload`
+- `base_url`、`login_path`、`token`、`username`、`password` 必须是字符串
+- `timeout` 必须是大于 0 的数字
+- `login_payload` 必须是 JSON object
+- `username` 和 `password` 必须一起提供，不能只填一个
+
+如果配置不合法，客户端会直接报清晰错误，而不是等到请求阶段再失败。
+
 ## 环境变量
 
 如果你更习惯环境变量，也可以继续使用：
@@ -139,6 +151,7 @@ python3 .claude/skills/order-demo-api/client.py 中文 客户 列表
 - 先检查这个接口是否本来就要求鉴权
 - 若要求鉴权，在 `config.json` 中补 `token`，或补 `username/password`
 - 只有你明确配置了用户名密码 / 登录 payload 时，客户端才会尝试自动重试一次
+- 如果只填了 `username` 或只填了 `password`，客户端会直接报错，提示你把两者一起补齐
 
 如果返回 404：
 - 检查 `CRM_API_BASE_URL`

@@ -32,6 +32,52 @@ class ApiError(Exception):
         self.payload = payload
 
 
+SUPPORTED_CONFIG_KEYS = {
+    "base_url",
+    "login_path",
+    "timeout",
+    "token",
+    "username",
+    "password",
+    "login_payload",
+}
+STRING_CONFIG_KEYS = {"base_url", "login_path", "token", "username", "password"}
+
+
+def validate_local_config(payload):
+    unknown_keys = sorted(set(payload.keys()) - SUPPORTED_CONFIG_KEYS)
+    if unknown_keys:
+        supported = ", ".join(sorted(SUPPORTED_CONFIG_KEYS))
+        raise ApiError(
+            f"Unsupported fields in {CONFIG_FILE_NAME}: {', '.join(unknown_keys)}. Supported fields: {supported}."
+        )
+
+    for key in STRING_CONFIG_KEYS:
+        value = payload.get(key)
+        if value is not None and not isinstance(value, str):
+            raise ApiError(f"{CONFIG_FILE_NAME} field '{key}' must be a string")
+
+    timeout = payload.get("timeout")
+    if timeout is not None:
+        if isinstance(timeout, bool):
+            raise ApiError(f"{CONFIG_FILE_NAME} field 'timeout' must be a number")
+        try:
+            timeout_value = float(timeout)
+        except (TypeError, ValueError) as exc:
+            raise ApiError(f"{CONFIG_FILE_NAME} field 'timeout' must be a number") from exc
+        if timeout_value <= 0:
+            raise ApiError(f"{CONFIG_FILE_NAME} field 'timeout' must be greater than 0")
+
+    login_payload = payload.get("login_payload")
+    if login_payload is not None and not isinstance(login_payload, dict):
+        raise ApiError(f"{CONFIG_FILE_NAME} field 'login_payload' must be a JSON object")
+
+    username = payload.get("username")
+    password = payload.get("password")
+    if (username and not password) or (password and not username):
+        raise ApiError(f"{CONFIG_FILE_NAME} fields 'username' and 'password' must be provided together")
+
+
 def load_local_config():
     path = Path(__file__).with_name(CONFIG_FILE_NAME)
     if not path.exists():
@@ -44,6 +90,7 @@ def load_local_config():
 
     if not isinstance(payload, dict):
         raise ApiError(f"{CONFIG_FILE_NAME} must contain a JSON object")
+    validate_local_config(payload)
     return payload
 
 
@@ -92,6 +139,10 @@ class CRMClient:
 
         username = os.environ.get("CRM_API_USERNAME") or self.config.get("username")
         password = os.environ.get("CRM_API_PASSWORD") or self.config.get("password")
+        if (username and not password) or (password and not username):
+            raise ApiError(
+                f"Incomplete login credentials. Provide both username and password in {CONFIG_FILE_NAME} or in CRM_API_USERNAME / CRM_API_PASSWORD."
+            )
         if username and password:
             return {"username": username, "password": password}
 
@@ -585,10 +636,11 @@ def build_parser():
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    client = CRMClient()
-    api_map = load_api_map()
 
     try:
+        client = CRMClient()
+        api_map = load_api_map()
+
         if args.command == "list-actions":
             emit({"actions": api_map})
 
